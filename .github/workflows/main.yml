@@ -1,16 +1,20 @@
 name: Flowable Main Build
 
-on: [push, pull_request]
+on: [pull_request]
 
 env:
   MAVEN_ARGS: >-
     -B -V --no-transfer-progress
     -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 
+permissions:
+  checks: write
+  pull-requests: write
+
 jobs:
   test_jdk:
     name: Linux (JDK ${{ matrix.java }})
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -21,12 +25,11 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: ${{ matrix.java }}
+        cache: ''
     - name: Cache Maven Repository
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      uses: namespacelabs/nscloud-cache-action@v1
       with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-maven-
+        cache: maven
     - name: Install
       # Need to do install first in order for the OSGi tests to work
       run: ./mvnw install ${MAVEN_ARGS} -DskipTests=true -Dmaven.javadoc.skip=true
